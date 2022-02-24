@@ -1,0 +1,90 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <errno.h>
+#include <signal.h>
+
+
+
+
+int main (int argc, char *argv[])
+{
+        pid_t childpid = 0;
+
+        //ints, j, k, and m used in task 5 of project, where k comes first from user input, followed by m
+        int i, j, a, b, c;
+
+        //adjusted so that prints error if program is less than or equal to 3 arguments passed
+        if (argc <= 3)
+        {
+                fprintf(stderr, "Usage: %s processes\n", argv[0]);
+                return 1;
+        }
+
+        a = atoi(argv[1]);
+        b = atoi(argv[2]);
+        c = atoi(argv[3]);
+
+        if (b !> 0)
+        {
+                fprintf(stderr, "passed second value must be an integer, will be set to 100 by default\n");
+                b = 100;
+        }
+
+        if (c > 20)
+        {
+                fprintf(stderr, "passed \"n\" parameter cannot exceed 20, will be set to 20 instead\n");
+                c = 20;
+        }
+
+        //creating shared memory address
+        int shmid = shmget (0x080698, sizeof(int), 0666 | IPC_CREAT);
+        int* shm = (int*)shmat(shmid, NULL, 0);
+
+        *shm = 0;
+        printf("Master Shared Memory set to 0\n");
+
+        int processID = fork();
+
+
+        //I think the joke is funny for an error message and refuse to take it out
+        if(prcessID < 0)
+        {
+                perror("ERROR: you might have spooned instead of forking\n");
+                exit(EXIT_FAILURE);
+        }
+
+        else if(processID == 0)
+        {
+                execl("./slave", c, NULL);
+        }
+
+        while (*shm ==0)
+        {
+                sleep(1);
+        }
+
+
+        if(*shm == -1)
+        {
+                kill(processID, SIGKILL);
+                printf("Master: ERROR unable to find file");
+                exit(EXIT_FAILURE);
+        }
+
+        printf("Master: result took seconds", );
+
+        *shm = 0;
+        printf("Master: shared memory has been reset");
+
+        wait(NULL);
+
+        shmctl(shmid, IPC_RMID, NULL);
+        printf("Master has been slain\n");
+
+        return(EXIT_SUCCESS);
+}
+ 
