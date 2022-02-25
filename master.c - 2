@@ -1,0 +1,146 @@
+/*
+ *  *Jared Migneco, Project 1, 02-08-2022
+ *   * */
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/time.h>
+
+//code from textbook for periodicasterisk
+static void myhandler(int s)
+{
+        char aster = '*';
+        int errsave;
+        errsave = errno;
+        write(STDERR_FILENO, &aster, 1);
+        errno = errsave;
+}
+static int setupinterrupt(void)
+{ /* set up myhandler for SIGPROF */
+        struct sigaction act;
+        act.sa_handler = myhandler;
+        act.sa_flags = 0;
+        return (sigemptyset(&act.sa_mask) || sigaction(SIGPROF, &act, NULL));
+}
+static int setupitimer(void)
+{ /* set ITIMER_PROF for 1-second intervals */
+        struct itimerval value;
+        value.it_interval.tv_sec = 1;
+        value.it_interval.tv_usec = 0;
+        value.it_value = value.it_interval;
+        return (setitimer(ITIMER_PROF, &value, NULL));
+}
+int main(void)
+{
+        if (setupinterrupt() == -1)
+        {
+                perror("Failed to set up handler for SIGPROF");
+                return 1;
+        }
+        if (setupitimer() == -1)
+        {
+                perror("Failed to set up the ITIMER_PROF interval timer");
+                return 1;
+        }
+ for ( ; ; ); /* execute rest of main program here */
+}
+
+
+int main (int argc, char *argv[])
+{
+        pid_t childpid = 0;
+
+        //integers for project. i and j for loops, a, b, and c for user defined values
+        int i, j, a, b, c;
+
+        //adjusted so that prints error if program is less than or equal to 3 arguments passed
+        if (argc <= 3)
+        {
+                fprintf(stderr, "Usage: %s processes\n", argv[0]);
+                return 1;
+        }
+
+        a = atoi(argv[1]);
+        b = atoi(argv[2]);
+        c = atoi(argv[3]);
+
+        if (b !> 0)
+        {
+                fprintf(stderr, "passed second value must be an integer, will be set to 100 by default\n");
+                b = 100;
+        }
+
+        if (c > 20)
+        {
+                fprintf(stderr, "passed \"n\" parameter cannot exceed 20, will be set to 20 instead\n");
+                c = 20;
+        }
+
+        //creating shared memory address
+        int shmid = shmget (0x080698, sizeof(int), 0666 | IPC_CREAT);
+        int* shm = (int*)shmat(shmid, NULL, 0);
+
+        *shm = 0;
+        printf("Master Shared Memory set to 0\n");
+
+        int processID = fork();
+
+
+        //I think the joke is funny for an error message and refuse to take it out
+        //error message if master does not fork
+        if(prcessID < 0)
+        {
+                perror("ERROR: you might have spooned instead of forking\n");
+                exit(EXIT_FAILURE);
+        }
+        //slave is executed so long as master successfully forked
+        else if(processID == 0)
+        {
+                execl("./slave", c, NULL);
+        }
+
+        while (*shm ==0)
+        {
+                sleep(1);
+        }
+
+
+        if(*shm == -1)
+        {
+                kill(processID, SIGKILL);
+                printf("Master: ERROR unable to find file\n");
+                exit(EXIT_FAILURE);
+        }
+
+        //code taken from periodic asterisk for timer setup
+        if (setupinterrupt() == -1)
+        {
+                perror("Failed to set up handler for SIGPROF");
+                return 1;
+        }
+        if (setupitimer() == -1)
+        {
+                perror("Failed to set up the ITIMER_PROF interval timer");
+                return 1;
+        }
+
+
+        printf("Master: result took seconds\n", );
+
+        *shm = 0;
+        printf("Master: shared memory has been reset\n");
+
+        wait(NULL);
+
+        shmctl(shmid, IPC_RMID, NULL);
+        printf("Master has been slain\n");
+
+        return(EXIT_SUCCESS);
+}
