@@ -5,3 +5,5 @@ Jared Migneco
 
 program does not compile, attempted call is master -t s n 
 master and slave classes have been made, and master attempts to fork, slave attempts to create a file and write to it using a critical section
+
+https://github.com/jamnmz/migneco.2
