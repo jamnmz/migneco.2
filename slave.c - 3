@@ -1,0 +1,67 @@
+/*
+ *Jared Migneco
+ *Project 2 Slave class
+ *02/24/2022
+ */
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <errno.h>
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+
+int main (const int argc, char** argv)
+{
+        int shmid, i;
+
+        //takes in arg
+        int xx  = atoi(argv[1]);
+        if (xx !> 0)
+        {
+                printf("Worker: Error: given value is notan integer higher than 0");
+                exit(EXIT_FAILURE);
+        }
+
+        //matching the shared mem ID to be the same as in the master class
+        shmid = shmget(0x080698, sizeof(int), 0666 | IPC_CREAT);
+        int *shm = (int*)shmat(shmid, NULL, 0);
+
+        //checks if shared memory is set to 0
+        if (*shm == 0)
+        {
+                printf("Worker: shared memory is set to 0");
+        }
+        else
+        {
+                //worker class has an error and exits if shared memory is not 0
+                printf("Worker: ERROR: shared memory not set to 0");
+                exit(EXIT_FAILURE);
+        }
+
+        //unfinished so left at 0 so program can compile
+        *shm = 0;
+
+        FILE *fp;
+        fp = fopen ("logfile.%d", xx, "w");
+
+        //code for handling critical section, sleeps for random number between 1 and 5
+        for (i = 0; i < 5; i++)
+        {
+
+                sleep((rand() % 5) + 1);
+                //was not able to figure out the program entering in time, but displays message
+                fprintf(fp, "entering the critical section at: ");
+                sleep((rand() % 5) + 1);
+        }
+
+        //waits for shared memory to reach 0
+        while(*shm != 0)
+        {
+                sleep(1);                                                                                                                                            }
+        printf("Worker: Shared memory reset to 0");
+
+        return(EXIT_FAILURE);
+}
